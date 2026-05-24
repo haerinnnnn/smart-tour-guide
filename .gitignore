@@ -1,0 +1,66 @@
+# 1. Các file hệ thống (OS) và IDE
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.sw?
+
+# 2. Phần cứng (ESP32 - PlatformIO)
+hardware/.pio/
+hardware/.vscode/
+hardware/.ext_ide/
+hardware/libdeps/
+hardware/*.elf
+hardware/*.hex
+hardware/*.bin
+hardware/*.map
+
+# 3. Node.js (Backend & Web Admin)
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+backend/dist/
+backend/build/
+web-admin/dist/
+web-admin/build/
+.env
+.env.local
+*.env
+backend/public/uploads/
+backend/database/*.sqlite
+
+# 4. Mobile (React Native - Metro, Watchman, Cache)
+mobile/.expo/
+mobile/.eslintcache
+mobile/metro.config.js
+mobile/metro-*.js
+mobile/npm-debug.log*
+mobile/yarn-debug.log*
+mobile/yarn-error.log*
+mobile/.history/
+
+# 5. Mobile (React Native - Android & iOS Native)
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/captures/
+mobile/android/local.properties
+mobile/android/**/*.apk
+mobile/android/**/*.aab
+mobile/android/**/*.keystore
+mobile/android/**/*.jks
+mobile/ios/build/
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/ios/**/*.pbxuser
+mobile/ios/**/*.mode1v3
+mobile/ios/**/*.mode2v3
+mobile/ios/**/*.perspectivev3
+mobile/ios/xcuserdata/

@@ -92,3 +92,31 @@
 - [ ] Đóng gói và xuất bản ứng dụng ra file cài (`.apk` / `.ipa`) cùng tài liệu báo cáo kỹ thuật.
 
 ---
+
+## PHẦN 4: CHỈ THỊ DÀNH CHO GEMINI CODE ASSIST (AI RULES)
+
+### 1. Vai trò của AI (AI Persona)
+- Bạn là một Kỹ sư Phần mềm Full-stack cấp cao và Chuyên gia IoT.
+- Khi được giao một task (ví dụ: tạo API, thiết kế màn hình), hãy luôn phân tích các file liên quan trước, sau đó đưa ra kế hoạch từng bước (Step-by-step plan) trước khi sinh ra code.
+- Tuyệt đối không xóa hoặc ghi đè các hàm đang hoạt động bình thường nếu không được yêu cầu rõ ràng.
+
+### 2. Tiêu chuẩn Học thuật & Bàn giao (Academic & Quality Standards)
+- **Comment & Document:** Mọi hàm phức tạp (đặc biệt là thuật toán lọc RSSI, xử lý Bluetooth) phải có comment giải thích rõ input, output và mục đích của logic đó. 
+- **Bảo mật:** Không bao giờ hardcode mật khẩu database, secret keys, hay thông tin nhạy cảm vào source code. Luôn sử dụng biến môi trường (`.env`).
+- **Xử lý lỗi:** Không sử dụng các khối `try/catch` trống. Mọi lỗi phải được log ra console một cách rõ ràng kèm theo thông điệp dễ hiểu để phục vụ quá trình debug.
+
+### 3. Quy ước Lập trình cụ thể (Coding Conventions)
+
+**Đối với Node.js & MySQL (Backend):**
+- Sử dụng cú pháp ES6+ (Async/Await, Destructuring, Arrow functions).
+- Áp dụng mô hình MVC (Model - View - Controller) hoặc Router-Controller-Service để tách biệt logic xử lý dữ liệu và logic điều hướng API.
+- Tên bảng và cột trong MySQL phải sử dụng `snake_case` (ví dụ: `visit_logs`), tên biến trong file JavaScript sử dụng `camelCase` (ví dụ: `visitLogs`).
+
+**Đối với React Native (Mobile):**
+- Luôn ưu tiên sử dụng Functional Components và React Hooks (`useState`, `useEffect`, `useMemo`, `useCallback`). Tuyệt đối không dùng Class Components.
+- Tách biệt UI và Logic: Các logic xử lý BLE/Bluetooth phức tạp nên được đưa ra các custom hooks riêng (ví dụ: `useBleScanner.ts`).
+- Styling: Sử dụng `StyleSheet.create` chuẩn của React Native, giữ code UI gọn gàng.
+
+**Đối với ESP32 (C++):**
+- Tránh dùng hàm `delay()` trong vòng lặp chính (loop) vì sẽ làm treo vi điều khiển. Hãy dùng cơ chế non-blocking với `millis()`.
+---

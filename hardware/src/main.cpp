@@ -10,13 +10,8 @@
 
 BLEAdvertising *pAdvertising;
 
-void setup()
+void setupIBeacon() 
 {
-  Serial.begin(115200);
-  
-  delay(2000); // Đợi 2 giây để cổng Serial ổn định
-  Serial.println("Starting BLE");
-
   BLEDevice::init("Museum Beacon 1");
   esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_N12);
 
@@ -47,10 +42,22 @@ void setup()
 
   pAdvertising->start();
   Serial.println("Advertising");
+}
+
+void setup()
+{
+  Serial.begin(115200);
   
+  delay(2000); // Đợi 2 giây để cổng Serial ổn định
+  Serial.println("Starting BLE");
+
+  setupIBeacon();
+  
+  // Kill the main Arduino task to save CPU cycles. 
+  // BLE advertising will continue running in the background FreeRTOS tasks.
+  vTaskDelete(NULL);
 }
 
 void loop()
 {
-  delay(2000);
 }

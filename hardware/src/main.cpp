@@ -13,14 +13,11 @@ BLEAdvertising *pAdvertising;
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial) {
-    delay(10);
-  }
   
-  delay(1000);
+  delay(2000); // Đợi 2 giây để cổng Serial ổn định
   Serial.println("Starting BLE");
 
-  BLEDevice::init("Museum Beacon");
+  BLEDevice::init("Museum Beacon 1");
   esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_N12);
 
   BLEBeacon oBeacon = BLEBeacon();
@@ -41,7 +38,12 @@ void setup()
 
   pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->setAdvertisementData(oAdvertisementData);
-  pAdvertising->setScanResponse(false);
+
+  // Đưa tên thiết bị vào gói Scan Response để nRF Connect hiển thị tên
+  BLEAdvertisementData oScanResponseData = BLEAdvertisementData();
+  oScanResponseData.setName("Museum Beacon 1");
+  pAdvertising->setScanResponseData(oScanResponseData);
+  pAdvertising->setScanResponse(true);
 
   pAdvertising->start();
   Serial.println("Advertising");
@@ -52,4 +54,3 @@ void loop()
 {
   delay(2000);
 }
-

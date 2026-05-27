@@ -50,7 +50,7 @@
 ## PHẦN 2: THÀNH PHẦN CÔNG NGHỆ (TECH STACK)
 * **Hardware (Phần cứng):** Mạch ESP32 phát sóng theo chuẩn giao thức iBeacon.
 * **Database (Cơ sở dữ liệu):** MySQL.
-* **Backend API:** Node.js kết hợp framework Express và công cụ ORM (Sequelize hoặc Prisma).
+* **Backend API:** Node.js kết hợp framework Express.
 * **Mobile App (Ứng dụng di động):** React Native (Ưu tiên sử dụng CLI để tối ưu can thiệp module Bluetooth tự nhiên).
 * **Web Admin (Giao diện quản trị):** React.js hoặc Vue.js, thiết kế UI với Tailwind CSS hoặc Ant Design.
 
@@ -65,9 +65,9 @@
 - [ ] Sử dụng ứng dụng nRF Connect để đo lường và kiểm thử chất lượng sóng thực tế.
 
 ### 2. Phân hệ Backend & Database
-- [ ] Khởi tạo Database MySQL, viết script Migration cho 3 bảng cốt lõi.
+- [ ] Khởi tạo Database MySQL.
 - [ ] Viết script Seeder nạp dữ liệu giả lập (Mock data) để phục vụ kiểm thử.
-- [ ] Cấu hình project Express và kết nối ORM tới Database.
+- [ ] Cấu hình project Express và kết nối tới Database.
 - [ ] Xây dựng API `GET /api/artifacts/detect` để map dữ liệu UUID/Major/Minor sang thông tin hiện vật.
 - [ ] Phát triển bộ RESTful API (CRUD) cho giao diện Web Admin.
 - [ ] Thiết lập logic ghi log tự động vào bảng `visit_logs` kèm cơ chế chống nhiễu (Debounce) khi người dùng đứng lâu ở một vị trí.

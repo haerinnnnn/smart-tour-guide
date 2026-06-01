@@ -49,6 +49,9 @@ export const useBleScanner = () => {
             }
 
             // Lọc thiết bị của bảo tàng (Dựa trên tên hoặc Service UUID đã set ở ESP32)
+            if (device && device.name === "Museum Beacon 2" && device.rssi) {
+                processBeaconSignal(device);
+            }
             if (device && device.name === "Museum Beacon 1" && device.rssi) {
                 processBeaconSignal(device);
             }

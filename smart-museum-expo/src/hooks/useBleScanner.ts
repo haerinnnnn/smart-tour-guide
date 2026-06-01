@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BleManager, Device } from 'react-native-ble-plx';
-import { Platform, PermissionsAndroid } from 'react-native';
+import { Platform, PermissionsAndroid, Permission } from 'react-native';
 
 const manager = new BleManager();
 const FILTER_N = 5; // Hằng số N cho thuật toán Moving Average
@@ -15,11 +15,23 @@ export const useBleScanner = () => {
     const requestPermissions = async () => {
         if (Platform.OS === 'android') {
             try {
-                const granted = await PermissionsAndroid.requestMultiple([
-                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-                    PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-                    PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-                ]);
+                const permissionsToRequest: Permission[] = [];
+                if (Platform.Version >= 31) {
+                    // Android 12+
+                    permissionsToRequest.push(
+                        PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+                        PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+                        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+                    );
+                } else {
+                    // Android 11 trở xuống
+                    permissionsToRequest.push(
+                        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION
+                    );
+                }
+                
+                const granted = await PermissionsAndroid.requestMultiple(permissionsToRequest);
                 return Object.values(granted).every(
                     permission => permission === PermissionsAndroid.RESULTS.GRANTED
                 );
@@ -44,15 +56,15 @@ export const useBleScanner = () => {
         manager.startDeviceScan(null, { allowDuplicates: true }, (error, device) => {
             if (error) {
                 console.error('❌ Lỗi quét BLE:', error.message);
-                setIsScanning(false);
+                // Không tự động tắt isScanning vì có thể là lỗi mất tín hiệu tạm thời
                 return;
             }
 
-            // Lọc thiết bị của bảo tàng (Dựa trên tên hoặc Service UUID đã set ở ESP32)
-            if (device && device.name === "Museum Beacon 2" && device.rssi) {
-                processBeaconSignal(device);
-            }
-            if (device && device.name === "Museum Beacon 1" && device.rssi) {
+            // Tạm thời log ra để xem app nhận được tên thật là gì (có thể xem qua adb logcat)
+            // console.log(`[BLE] ID: ${device?.id} | Name: ${device?.name} | RSSI: ${device?.rssi}`);
+
+            // Nới lỏng điều kiện kiểm tra, gộp chung điều kiện cho gọn
+            if (device && device.rssi && (device.name === "Museum Beacon 1" || device.name === "Museum Beacon 2")) {
                 processBeaconSignal(device);
             }
         });

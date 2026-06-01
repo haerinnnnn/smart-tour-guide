@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tắt margin/padding mặc định của body để layout Antd hiển thị chuẩn */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+}

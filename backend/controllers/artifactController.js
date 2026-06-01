@@ -66,4 +66,119 @@ const detectArtifact = async (req, res) => {
     }
 };
 
-module.exports = { detectArtifact };
+/**
+ * Lấy danh sách tất cả các Hiện vật
+ * Route: GET /api/artifacts
+ */
+const getAllArtifacts = async (req, res) => {
+    try {
+        const query = `
+            SELECT a.*, b.location_name 
+            FROM artifacts a
+            LEFT JOIN beacons b ON a.beacon_id = b.id
+            ORDER BY a.id DESC
+        `;
+        const [rows] = await pool.execute(query);
+        return res.status(200).json({ success: true, data: rows });
+    } catch (error) {
+        console.error('❌ Lỗi tại API getAllArtifacts:', error.message);
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
+    }
+};
+
+/**
+ * Lấy thông tin 1 Hiện vật theo ID
+ * Route: GET /api/artifacts/:id
+ */
+const getArtifactById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = 'SELECT * FROM artifacts WHERE id = ?';
+        const [rows] = await pool.execute(query, [id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy Hiện vật' });
+        }
+        return res.status(200).json({ success: true, data: rows[0] });
+    } catch (error) {
+        console.error('❌ Lỗi tại API getArtifactById:', error.message);
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
+    }
+};
+
+/**
+ * Thêm mới 1 Hiện vật
+ * Route: POST /api/artifacts
+ */
+const createArtifact = async (req, res) => {
+    try {
+        const { beacon_id, title, author, description, image_url, audio_url } = req.body;
+        if (!title) {
+            return res.status(400).json({ success: false, message: 'Vui lòng cung cấp tên hiện vật (title)' });
+        }
+        
+        // beacon_id có thể truyền null nếu hiện vật chưa được gắn cảm biến
+        const query = 'INSERT INTO artifacts (beacon_id, title, author, description, image_url, audio_url) VALUES (?, ?, ?, ?, ?, ?)';
+        const [result] = await pool.execute(query, [beacon_id || null, title, author || 'Ẩn danh', description || '', image_url || null, audio_url || null]);
+        
+        return res.status(201).json({ success: true, message: 'Thêm hiện vật thành công', data: { id: result.insertId } });
+    } catch (error) {
+        console.error('❌ Lỗi tại API createArtifact:', error.message);
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
+    }
+};
+
+/**
+ * Cập nhật thông tin Hiện vật
+ * Route: PUT /api/artifacts/:id
+ */
+const updateArtifact = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { beacon_id, title, author, description, image_url, audio_url } = req.body;
+        if (!title) {
+            return res.status(400).json({ success: false, message: 'Vui lòng cung cấp tên hiện vật (title)' });
+        }
+        const query = 'UPDATE artifacts SET beacon_id = ?, title = ?, author = ?, description = ?, image_url = ?, audio_url = ? WHERE id = ?';
+        const [result] = await pool.execute(query, [beacon_id || null, title, author || 'Ẩn danh', description || '', image_url || null, audio_url || null, id]);
+        
+        if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Không tìm thấy hiện vật để cập nhật' });
+        return res.status(200).json({ success: true, message: 'Cập nhật hiện vật thành công' });
+    } catch (error) {
+        console.error('❌ Lỗi tại API updateArtifact:', error.message);
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
+    }
+};
+
+/**
+ * Xóa 1 Hiện vật
+ * Route: DELETE /api/artifacts/:id
+ */
+const deleteArtifact = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = 'DELETE FROM artifacts WHERE id = ?';
+        const [result] = await pool.execute(query, [id]);
+        
+        if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Không tìm thấy hiện vật để xóa' });
+        return res.status(200).json({ success: true, message: 'Xóa hiện vật thành công' });
+    } catch (error) {
+        console.error('❌ Lỗi tại API deleteArtifact:', error.message);
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
+    }
+};
+
+/**
+ * API Upload File (Hình ảnh / Âm thanh)
+ * Route: POST /api/artifacts/upload
+ */
+const uploadFile = (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'Không có file nào được tải lên' });
+    }
+    // Trả về URL để Frontend lưu vào Database. Ví dụ: /uploads/1690000000000-image.png
+    const fileUrl = `/uploads/${req.file.filename}`;
+    return res.status(200).json({ success: true, url: fileUrl });
+};
+
+module.exports = { detectArtifact, getAllArtifacts, getArtifactById, createArtifact, updateArtifact, deleteArtifact, uploadFile };

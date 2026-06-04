@@ -7,6 +7,7 @@
     "@expo/ui": "~56.0.14",
     "@expo/vector-icons": "^15.0.2",
     "@openspacelabs/react-native-zoomable-view": "^2.4.2",
+    "buffer": "^6.0.3",
     "expo": "~56.0.5",
     "expo-build-properties": "~56.0.16",
     "expo-constants": "~56.0.16",

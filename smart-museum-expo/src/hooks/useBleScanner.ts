@@ -6,25 +6,43 @@ const manager = new BleManager();
 const FILTER_N = 5; // Hằng số N cho thuật toán Moving Average
 
 export const useBleScanner = () => {
-    const [nearestBeacon, setNearestBeacon] = useState<{uuid: string, major: number, minor: number} | null>(null);
+    const [nearestBeacon, setNearestBeacon] = useState<{uuid: string, major: number, minor: number, name?: string} | null>(null);
     const [isScanning, setIsScanning] = useState<boolean>(false);
     
-    // Lưu trữ lịch sử RSSI để tính toán Moving Average theo MAC Address của thiết bị
     const rssiHistory = useRef<Record<string, number[]>>({});
+    // Dùng useRef để lưu Từ điển Beacon nhằm tránh kẹt Closure trong hàm callback quét
+    const beaconDictionary = useRef<Record<string, any>>({}); 
+
+    // 1. KẾT NỐI BACKEND: Tải danh sách Beacon khi App vừa khởi động
+    useEffect(() => {
+        // ⚠️ QUAN TRỌNG: Sửa IP này thành IPv4 máy tính của bạn (Mở cmd -> gõ ipconfig)
+        // Tuyệt đối không dùng 'localhost' vì điện thoại sẽ không hiểu
+        const API_URL = 'http://192.168.1.221:3000/api/beacons'; 
+
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(json => {
+                if (json.success) {
+                    beaconDictionary.current = json.data;
+                    console.log("📚 Đã tải Từ điển Beacon từ Server, gồm các MAC:", Object.keys(json.data));
+                }
+            })
+            .catch(err => console.log("❌ Lỗi tải Từ điển Beacon (nhớ bật Node.js và check IP):", err));
+
+        return () => { manager.stopDeviceScan(); };
+    }, []);
 
     const requestPermissions = async () => {
         if (Platform.OS === 'android') {
             try {
                 const permissionsToRequest: Permission[] = [];
                 if (Platform.Version >= 31) {
-                    // Android 12+
                     permissionsToRequest.push(
                         PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
                         PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
                         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
                     );
                 } else {
-                    // Android 11 trở xuống
                     permissionsToRequest.push(
                         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
                         PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION
@@ -40,76 +58,71 @@ export const useBleScanner = () => {
                 return false;
             }
         }
-        return true; // iOS được cấu hình qua Info.plist
+        return true; 
     };
 
     const startScan = useCallback(async () => {
         const hasPermission = await requestPermissions();
-        if (!hasPermission) {
-            console.error('❌ Không có quyền truy cập Bluetooth/Vị trí');
-            return;
-        }
+        if (!hasPermission) return;
 
         setIsScanning(true);
-        console.log('🔍 Bắt đầu quét BLE...');
-
-        manager.startDeviceScan(null, { allowDuplicates: true }, (error, device) => {
+        console.log("🚀 FILE CHUẨN TRONG SRC/HOOKS ĐANG CHẠY!");
+        console.log('🔍 Bắt đầu quét thiết bị dựa trên Từ điển Database...');
+        
+        // Thêm tham số scanMode: 2 (Low Latency) để ép Android không bóp băng thông Bluetooth
+        manager.startDeviceScan(null, { allowDuplicates: true, scanMode: 2 }, (error, device) => {
             if (error) {
-                console.error('❌ Lỗi quét BLE:', error.message);
-                // Không tự động tắt isScanning vì có thể là lỗi mất tín hiệu tạm thời
+                console.log('❌ Lỗi quét từ Android:', error.message);
                 return;
             }
 
-            // Tạm thời log ra để xem app nhận được tên thật là gì (có thể xem qua adb logcat)
-            // console.log(`[BLE] ID: ${device?.id} | Name: ${device?.name} | RSSI: ${device?.rssi}`);
+            if (device && device.id) {
+                // 1. Ép toàn bộ MAC về chữ IN HOA để tra từ điển không bao giờ trượt
+                const scannedMac = device.id.toUpperCase();
+                const currentRssi = device.rssi || -100;
 
-            // Nới lỏng điều kiện kiểm tra, gộp chung điều kiện cho gọn
-            if (device && device.rssi && (device.name === "Museum Beacon 1" || device.name === "Museum Beacon 2")) {
-                processBeaconSignal(device);
+                // 2. BẬT RADAR: Chỉ in ra những sóng đang ở rất gần (RSSI > -75) 
+                if (currentRssi > -75) {
+                    //console.log(`📡 Radar: MAC: ${scannedMac} | Tên: ${device.name || "Bị ẩn"} | RSSI: ${currentRssi}`);
+                }
+
+                // 3. TÌM KIẾM TRONG TỪ ĐIỂN
+                const targetBeacon = beaconDictionary.current[scannedMac];
+                
+                if (targetBeacon) {
+                    // Chạy thuật toán Moving Average để mượt sóng
+                    if (!rssiHistory.current[scannedMac]) rssiHistory.current[scannedMac] = [];
+                    rssiHistory.current[scannedMac].push(currentRssi);
+                    if (rssiHistory.current[scannedMac].length > FILTER_N) {
+                        rssiHistory.current[scannedMac].shift();
+                    }
+
+                    const sum = rssiHistory.current[scannedMac].reduce((a, b) => a + b, 0);
+                    const smoothRssi = sum / rssiHistory.current[scannedMac].length;
+
+                    //console.log(`🔥 ĐÃ BẮT ĐƯỢC MẠCH CỦA MÌNH: ${targetBeacon.name} | MAC: ${scannedMac} | Sóng RSSI: ${smoothRssi.toFixed(1)}`);
+
+                    // 4. Kích hoạt hiển thị nếu tiến lại gần mạch ESP32 (Sóng > -65 dBm)
+                    if (smoothRssi > -65) {
+                        setNearestBeacon({
+                            uuid: targetBeacon.uuid,
+                            major: targetBeacon.major,
+                            minor: targetBeacon.minor,
+                            name: targetBeacon.name
+                        });
+                    }
+                }
             }
         });
     }, []);
 
-    const processBeaconSignal = (device: Device) => {
-        const mac = device.id;
-        const currentRssi = device.rssi!;
-
-        // 1. Cập nhật mảng lịch sử RSSI
-        if (!rssiHistory.current[mac]) {
-            rssiHistory.current[mac] = [];
-        }
-        rssiHistory.current[mac].push(currentRssi);
-        if (rssiHistory.current[mac].length > FILTER_N) {
-            rssiHistory.current[mac].shift(); // Xóa giá trị cũ nhất
-        }
-
-        // 2. Tính toán RSSI mượt (Moving Average)
-        const sum = rssiHistory.current[mac].reduce((a, b) => a + b, 0);
-        const smoothRssi = sum / rssiHistory.current[mac].length;
-
-        // Bán kính quét hẹp (VD: RSSI > -65 là ở rất gần)
-        if (smoothRssi > -65) {
-            // Giả lập bóc tách UUID, Major, Minor từ gói tin (Thực tế cần parser dữ liệu thô)
-            // Vì yêu cầu giữ code rõ ràng, ta map cứng thông số từ ESP32 đang phát ra
-            setNearestBeacon({
-                uuid: "12345678-1234-1234-1234-123456789012",
-                major: 1,
-                minor: 1
-            });
-        }
-    };
-
     const stopScan = () => {
         manager.stopDeviceScan();
         setIsScanning(false);
+        setNearestBeacon(null); 
+        rssiHistory.current = {};
         console.log('⏹️ Đã dừng quét BLE');
     };
-
-    useEffect(() => {
-        return () => {
-            manager.stopDeviceScan(); // Cleanup khi unmount
-        };
-    }, []);
 
     return { startScan, stopScan, isScanning, nearestBeacon };
 };

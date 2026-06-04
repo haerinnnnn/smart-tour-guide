@@ -1,63 +1,61 @@
 #include <Arduino.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
-#include <BLEBeacon.h>
-#include "esp_bt.h"
 
-#define BEACON_UUID "12345678-1234-1234-1234-123456789012"
-#define MAJOR 1
-#define MINOR 1
-
-BLEAdvertising *pAdvertising;
-
-void setupIBeacon() 
-{
-  BLEDevice::init("Museum Beacon 1");
-  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_N12);
-
-  BLEBeacon oBeacon = BLEBeacon();
-  oBeacon.setManufacturerId(0x4C00);
-  oBeacon.setProximityUUID(BLEUUID(BEACON_UUID));
-  oBeacon.setMajor(MAJOR);
-  oBeacon.setMinor(MINOR);
-  oBeacon.setSignalPower(0xC5);
-
-  BLEAdvertisementData oAdvertisementData = BLEAdvertisementData();
-  oAdvertisementData.setFlags(0x04);
+void setup() {
+  Serial.begin(115200);
   
-  std::string strServiceData = "";
-  strServiceData += (char)26;
-  strServiceData += (char)0xFF;
-  strServiceData += oBeacon.getData();
-  oAdvertisementData.addData(strServiceData);
+  // Tăng delay lên 3 giây để máy tính kịp nhận cổng USB trước khi code chạy
+  delay(3000); 
+  Serial.println("Starting BLE...");
 
-  pAdvertising = BLEDevice::getAdvertising();
+  // Khởi tạo BLE
+  BLEDevice::init("Museum Beacon 1");
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P3);
+
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  BLEAdvertisementData oAdvertisementData = BLEAdvertisementData();
+  
+  // Set cờ BLE (General Discoverable)
+  oAdvertisementData.setFlags(0x06);
+
+  // Tạo chuỗi cấu trúc iBeacon chuẩn (không dùng thư viện ngoài)
+  std::string mfgData = "";
+  mfgData += (char)0xE5; // Mã Apple ID (Low)
+  mfgData += (char)0x02; // Mã Apple ID (High)
+  mfgData += (char)0x02; // iBeacon Type
+  mfgData += (char)0x15; // Chiều dài data (21 bytes)
+  
+  // Gắn chính xác UUID: 12345678-1234-1234-1234-123456789012
+  uint8_t uuid[16] = {0x12, 0x34, 0x56, 0x78, 0x12, 0x34, 0x12, 0x34, 0x12, 0x34, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12};
+  for (int i=0; i<16; i++) {
+    mfgData += (char)uuid[i];
+  }
+  
+  // Major: 1 (2 bytes)
+  mfgData += (char)0x00; 
+  mfgData += (char)0x01;
+  
+  // Minor: 1 (2 bytes)
+  mfgData += (char)0x00; 
+  mfgData += (char)0x01;
+  
+  // TX Power: -59 dBm (0xC5)
+  mfgData += (char)0xC5;
+
+  // Đẩy data vào gói quảng bá
+  oAdvertisementData.setManufacturerData(mfgData);
   pAdvertising->setAdvertisementData(oAdvertisementData);
 
-  // Đưa tên thiết bị vào gói Scan Response để nRF Connect hiển thị tên
+  // Đẩy tên vào gói Scan Response để khỏi bị lấn chiếm 31 bytes
   BLEAdvertisementData oScanResponseData = BLEAdvertisementData();
   oScanResponseData.setName("Museum Beacon 1");
   pAdvertising->setScanResponseData(oScanResponseData);
-  pAdvertising->setScanResponse(true);
-
+  
   pAdvertising->start();
-  Serial.println("Advertising");
+  Serial.println("Advertising Standard iBeacon!");
 }
 
-void setup()
-{
-  Serial.begin(115200);
-  
-  delay(2000); // Đợi 2 giây để cổng Serial ổn định
-  Serial.println("Starting BLE");
-
-  setupIBeacon();
-  
-  // Kill the main Arduino task to save CPU cycles. 
-  // BLE advertising will continue running in the background FreeRTOS tasks.
-  vTaskDelete(NULL);
-}
-
-void loop()
-{
+void loop() {
+  delay(1000);
 }

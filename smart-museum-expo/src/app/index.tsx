@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useBleScanner } from '../hooks/useBleScanner';
 
 export default function AppIndex() {
@@ -11,12 +11,15 @@ export default function AppIndex() {
         if (nearestBeacon) {
             fetchArtifactData(nearestBeacon.uuid, nearestBeacon.major, nearestBeacon.minor);
         }
-    }, [nearestBeacon]);
+        else{
+            setArtifactInfo(null);
+        }
+    }, [nearestBeacon?.uuid, nearestBeacon?.major, nearestBeacon?.minor]);
 
     const fetchArtifactData = async (uuid: string, major: number, minor: number) => {
         try {
             setLoading(true);
-            const API_URL = `http://192.168.1.100:3000/api/artifacts/detect?uuid=${uuid}&major=${major}&minor=${minor}`;
+            const API_URL = `http://192.168.1.221:3000/api/artifacts/detect?uuid=${uuid}&major=${major}&minor=${minor}`;
             const response = await fetch(API_URL);
             const json = await response.json();
             if (json.success) setArtifactInfo(json.data);
@@ -36,6 +39,13 @@ export default function AppIndex() {
                 
                 {!loading && artifactInfo ? (
                     <View style={styles.card}>
+                        {artifactInfo.image_url ? (
+                            <Image 
+                                source={{ uri: artifactInfo.image_url }} 
+                                style={styles.artifactImage} 
+                                resizeMode="cover"
+                            />
+                        ) : null}
                         <Text style={styles.artifactTitle}>{artifactInfo.title}</Text>
                         <Text style={styles.location}>📍 {artifactInfo.location_name}</Text>
                         <Text style={styles.description}>{artifactInfo.description}</Text>
@@ -68,6 +78,7 @@ const styles = StyleSheet.create({
     buttonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
     infoContainer: { flex: 1, justifyContent: 'center' },
     card: { padding: 20, borderRadius: 12, backgroundColor: '#FFF', elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 },
+    artifactImage: { width: '100%', height: 200, borderRadius: 8, marginBottom: 15 },
     artifactTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 8, color: '#34495E' },
     location: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, color: '#2980B9' },
     description: { fontSize: 16, lineHeight: 24, color: '#2C3E50' },

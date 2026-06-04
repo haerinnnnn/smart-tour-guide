@@ -12,7 +12,7 @@ const pool = mysql.createPool({
     connectionLimit: 10,
     queueLimit: 0,
     ssl: {
-        rejectUnauthorized: false // Bắt buộc khi kết nối tới Cloud Database (như Aiven)
+        rejectUnauthorized: false // Bắt buộc phải có dòng này với Aiven Cloud
     }
 });
 

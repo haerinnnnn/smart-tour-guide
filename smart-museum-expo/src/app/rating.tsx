@@ -5,29 +5,19 @@ import { Ionicons } from '@expo/vector-icons';
 export default function RatingScreen() {
     const [rating, setRating] = useState<number>(0);
     const [showThanks, setShowThanks] = useState<boolean>(false);
-    
-    // Dùng useRef để lưu ID của bộ đếm giờ, giúp hủy bộ đếm cũ nếu người dùng bấm lại
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    // Mảng 5 phần tử đại diện cho 5 ngôi sao
     const stars = [1, 2, 3, 4, 5];
 
     const handleRate = (selectedStar: number) => {
         setRating(selectedStar);
         setShowThanks(true);
-
-        // Xóa bộ đếm giờ cũ (nếu có) để thời gian 10s luôn đếm lại từ đầu mỗi lần bấm
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
-
-        // Đặt bộ đếm giờ mới: 10000ms = 10 giây
         timeoutRef.current = setTimeout(() => {
             setShowThanks(false);
         }, 10000);
     };
-
-    // Cleanup function: Xóa bộ đếm nếu người dùng chuyển sang tab khác trước khi hết 10s
     useEffect(() => {
         return () => {
             if (timeoutRef.current) {
@@ -43,8 +33,6 @@ export default function RatingScreen() {
             <Text style={styles.subtitle}>
                 Bạn cảm thấy hệ thống dẫn đường và thuyết minh của bảo tàng như thế nào?
             </Text>
-
-            {/* Khu vực hiển thị 5 ngôi sao */}
             <View style={styles.starsContainer}>
                 {stars.map((star) => (
                     <TouchableOpacity 
@@ -53,7 +41,6 @@ export default function RatingScreen() {
                         activeOpacity={0.7}
                     >
                         <Ionicons 
-                            // Nếu sao hiện tại nhỏ hơn hoặc bằng số điểm đã đánh giá -> sao đặc, ngược lại -> sao viền
                             name={star <= rating ? "star" : "star-outline"} 
                             size={45} 
                             color={star <= rating ? "#F1C40F" : "#BDC3C7"} 
@@ -62,8 +49,6 @@ export default function RatingScreen() {
                     </TouchableOpacity>
                 ))}
             </View>
-
-            {/* Lời cảm ơn chỉ hiện khi showThanks = true */}
             {showThanks && (
                 <View style={styles.thanksContainer}>
                     <Ionicons name="checkmark-circle" size={24} color="#27AE60" />

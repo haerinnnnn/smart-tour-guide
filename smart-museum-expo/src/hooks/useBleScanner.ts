@@ -1,37 +1,38 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { BleManager, Device } from 'react-native-ble-plx';
+import { useEffect, useRef, useCallback } from 'react';
+import { BleManager } from 'react-native-ble-plx';
 import { Platform, PermissionsAndroid, Permission, Alert } from 'react-native';
 import Constants from 'expo-constants';
+import { useBleStore } from '../store/useBleStore'; // Lấy kho dữ liệu chung ra dùng
 
 const manager = new BleManager();
-const FILTER_N = 5; // Hằng số N cho thuật toán Moving Average
+const FILTER_N = 5;
 
 export const useBleScanner = () => {
-    const [nearestBeacon, setNearestBeacon] = useState<{uuid: string, major: number, minor: number, name?: string} | null>(null);
-    const [isScanning, setIsScanning] = useState<boolean>(false);
+    // Không dùng useState nữa, mà dùng hàm từ Store
+    const nearestBeacon = useBleStore(state => state.nearestBeacon);
+    const setNearestBeacon = useBleStore(state => state.setNearestBeacon);
+    const isScanning = useBleStore(state => state.isScanning);
+    const setIsScanning = useBleStore(state => state.setIsScanning);
     
     const rssiHistory = useRef<Record<string, number[]>>({});
-    // Dùng useRef để lưu Từ điển Beacon nhằm tránh kẹt Closure trong hàm callback quét
     const beaconDictionary = useRef<Record<string, any>>({}); 
+
+    // 1. Tải Từ điển Beacon từ Server
     useEffect(() => {
         const hostUri = Constants.expoConfig?.hostUri;
         const SERVER_IP = hostUri ? hostUri.split(':')[0] : '192.168.1.221';
-        
-        const API_URL = `http://${SERVER_IP}:3000/api/beacons`; 
-        console.log("🔗 Đang tải Từ điển Beacon từ:", API_URL);
+        const API_URL = `http://${SERVER_IP}:3000/api/beacons/dictionary`; 
 
         fetch(API_URL)
             .then(res => res.json())
             .then(json => {
-                if (json.success) {
-                    beaconDictionary.current = json.data;
-                    console.log("✅ Đã tải thành công Từ điển Beacon!");
-                }
+                if (json.success) beaconDictionary.current = json.data;
             })
-            .catch(err => console.log("❌ Lỗi tải Từ điển Beacon:", err.message));
+            .catch(err => console.log("❌ Lỗi tải Từ điển:", err.message));
 
         return () => { manager.stopDeviceScan(); };
     }, []);
+
     const requestPermissions = async () => {
         if (Platform.OS === 'android') {
             try {
@@ -48,15 +49,9 @@ export const useBleScanner = () => {
                         PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION
                     );
                 }
-                
                 const granted = await PermissionsAndroid.requestMultiple(permissionsToRequest);
-                return Object.values(granted).every(
-                    permission => permission === PermissionsAndroid.RESULTS.GRANTED
-                );
-            } catch (error) {
-                console.error('❌ Lỗi xin quyền Bluetooth:', error);
-                return false;
-            }
+                return Object.values(granted).every(p => p === PermissionsAndroid.RESULTS.GRANTED);
+            } catch (error) { return false; }
         }
         return true; 
     };
@@ -64,67 +59,47 @@ export const useBleScanner = () => {
     const startScan = useCallback(async () => {
         const hasPermission = await requestPermissions();
         if (!hasPermission) {
-            Alert.alert("Lỗi quyền", "Bạn cần cấp quyền Bluetooth và Vị trí để tham quan bảo tàng.");
+            Alert.alert("Lỗi quyền", "Bạn cần cấp quyền Bluetooth và Vị trí.");
             return;
         }
 
-        // =========================================================
-        // KIỂM TRA VÀ YÊU CẦU BẬT BLUETOOTH (An toàn 100% trên Android)
-        // =========================================================
         if (Platform.OS === 'android') {
             const btState = await manager.state();
             if (btState !== 'PoweredOn') {
-                console.log('⚠️ Bluetooth đang tắt, hiển thị cảnh báo cho người dùng.');
-                
-                // Hiển thị thông báo trên màn hình điện thoại
-                Alert.alert(
-                    "Chưa bật Bluetooth ⚠️",
-                    "Bạn hãy vuốt màn hình từ trên xuống và bật Bluetooth để hệ thống có thể định vị tác phẩm nhé!",
-                    [
-                        { text: "Đã hiểu", style: "default" }
-                    ]
-                );
-                
+                Alert.alert("Chưa bật Bluetooth", "Bạn hãy bật Bluetooth nhé!");
                 setIsScanning(false);
-                return; // Lập tức dừng lại, không chạy lệnh quét (tránh lỗi ngầm)
-            }
-        }
-        // =========================================================
-
-        setIsScanning(true);
-        console.log("🚀 FILE CHUẨN TRONG SRC/HOOKS ĐANG CHẠY!");
-        console.log('🔍 Bắt đầu quét thiết bị dựa trên Từ điển Database...');
-        
-        // Thêm tham số scanMode: 2 (Low Latency) để ép Android không bóp băng thông Bluetooth
-        manager.startDeviceScan(null, { allowDuplicates: true, scanMode: 2 }, (error, device) => {
-            if (error) {
-                console.log('❌ Lỗi quét từ Android:', error.message);
                 return;
             }
+        }
+
+        setIsScanning(true);
+        manager.startDeviceScan(null, { allowDuplicates: true, scanMode: 2 }, (error, device) => {
+            if (error) return;
 
             if (device && device.id) {
                 const scannedMac = device.id.toUpperCase();
                 const currentRssi = device.rssi || -100;
-                
                 const targetBeacon = beaconDictionary.current[scannedMac];
                 
                 if (targetBeacon) {
                     if (!rssiHistory.current[scannedMac]) rssiHistory.current[scannedMac] = [];
                     rssiHistory.current[scannedMac].push(currentRssi);
-                    if (rssiHistory.current[scannedMac].length > FILTER_N) {
-                        rssiHistory.current[scannedMac].shift();
-                    }
+                    if (rssiHistory.current[scannedMac].length > FILTER_N) rssiHistory.current[scannedMac].shift();
 
                     const sum = rssiHistory.current[scannedMac].reduce((a, b) => a + b, 0);
                     const smoothRssi = sum / rssiHistory.current[scannedMac].length;
 
+                    // Lọc nhiễu và chống Spam
                     if (smoothRssi > -65) {
-                        setNearestBeacon({
-                            uuid: targetBeacon.uuid,
-                            major: targetBeacon.major,
-                            minor: targetBeacon.minor,
-                            name: targetBeacon.name
-                        });
+                        const currentBeaconState = useBleStore.getState().nearestBeacon;
+                        if (currentBeaconState?.uuid !== targetBeacon.uuid) {
+                            setNearestBeacon({
+                                uuid: targetBeacon.uuid,
+                                major: targetBeacon.major,
+                                minor: targetBeacon.minor,
+                                name: targetBeacon.name
+                            });
+                        }
                     }
                 }
             }
@@ -136,8 +111,8 @@ export const useBleScanner = () => {
         setIsScanning(false);
         setNearestBeacon(null); 
         rssiHistory.current = {};
-        console.log('⏹️ Đã dừng quét BLE');
     };
 
+    // Trả ra các biến để trang index.tsx vẫn hoạt động bình thường
     return { startScan, stopScan, isScanning, nearestBeacon };
 };

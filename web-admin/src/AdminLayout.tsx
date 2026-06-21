@@ -24,20 +24,23 @@ const AdminLayout: React.FC = () => {
   // Định nghĩa các mục menu của Sidebar
   const menuItems = [
     {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Thống kê (Dashboard)',
+      key: '/artifacts',
+      icon: <PictureOutlined />,
+      label: 'Quản lý Hiện vật',
     },
+
     {
       key: '/beacons',
       icon: <WifiOutlined />,
       label: 'Quản lý Beacon',
     },
+    
     {
-      key: '/artifacts',
-      icon: <PictureOutlined />,
-      label: 'Quản lý Hiện vật',
+      key: '/dashboard',
+      icon: <DashboardOutlined />,
+      label: 'Thống kê (Dashboard)',
     },
+    
   ];
 
   // Xử lý chuyển trang khi click vào menu

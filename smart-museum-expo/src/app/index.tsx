@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, SafeAreaView, StatusBar } from 'react-native';
+import Constants from 'expo-constants';
 import { useBleScanner } from '../hooks/useBleScanner';
 
 export default function AppIndex() {
@@ -10,8 +11,7 @@ export default function AppIndex() {
     useEffect(() => {
         if (nearestBeacon) {
             fetchArtifactData(nearestBeacon.uuid, nearestBeacon.major, nearestBeacon.minor);
-        }
-        else{
+        } else {
             setArtifactInfo(null);
         }
     }, [nearestBeacon?.uuid, nearestBeacon?.major, nearestBeacon?.minor]);
@@ -19,9 +19,13 @@ export default function AppIndex() {
     const fetchArtifactData = async (uuid: string, major: number, minor: number) => {
         try {
             setLoading(true);
-            const API_URL = `http://192.168.1.221:3000/api/artifacts/detect?uuid=${uuid}&major=${major}&minor=${minor}`;
+            const hostUri = Constants.expoConfig?.hostUri;
+            const SERVER_IP = hostUri ? hostUri.split(':')[0] : '192.168.1.221';
+            
+            const API_URL = `http://${SERVER_IP}:3000/api/artifacts/detect?uuid=${uuid}&major=${major}&minor=${minor}`;
             const response = await fetch(API_URL);
             const json = await response.json();
+            
             if (json.success) setArtifactInfo(json.data);
         } catch (error) {
             console.error('❌ Lỗi kết nối Server:', error);
@@ -31,56 +35,103 @@ export default function AppIndex() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.headerTitle}>Smart Museum Guide</Text>
-
-            <View style={styles.infoContainer}>
-                {loading && <ActivityIndicator size="large" color="#208AEF" />}
+        <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="light-content" backgroundColor="#111" />
+            
+            {/* PHẦN HIỂN THỊ NỘI DUNG (CUỘN ĐƯỢC) */}
+            <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 
-                {!loading && artifactInfo ? (
-                    <View style={styles.card}>
+                {!artifactInfo && !loading && (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyTitle}>THE MASTERPIECES TOUR</Text>
+                        <Text style={styles.emptySubtitle}>
+                            {isScanning ? 'Đang dò tìm kiệt tác nghệ thuật xung quanh bạn...' : 'Bật quét sóng để khám phá'}
+                        </Text>
+                    </View>
+                )}
+
+                {loading && (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="#FFF" />
+                    </View>
+                )}
+
+                {!loading && artifactInfo && (
+                    <View>
                         {artifactInfo.image_url ? (
                             <Image 
                                 source={{ uri: artifactInfo.image_url }} 
-                                style={styles.artifactImage} 
+                                style={styles.heroImage} 
                                 resizeMode="cover"
                             />
                         ) : null}
-                        <Text style={styles.artifactTitle}>{artifactInfo.title}</Text>
-                        <Text style={styles.location}>📍 {artifactInfo.location_name}</Text>
-                        <Text style={styles.description}>{artifactInfo.description}</Text>
+                        <View style={styles.contentBox}>
+                            <Text style={styles.title}>{artifactInfo.title.toUpperCase()}</Text>
+                            <Text style={styles.subtitle}>Tác giả: {artifactInfo.author || 'Ẩn danh'}</Text>
+                            <View style={styles.divider} />
+                            <Text style={styles.metaLabel}>Nơi trưng bày:</Text>
+                            <Text style={styles.metaValue}>{artifactInfo.location_name}</Text>
+                            <View style={styles.divider} />
+                            <Text style={styles.sectionTitle}>Introduction</Text>
+                            <Text style={styles.description}>{artifactInfo.description}</Text>
+                        </View>
                     </View>
-                ) : (
-                    !loading && (
-                        <Text style={styles.instructionText}>
-                            {isScanning ? 'Đang dò tìm hiện vật xung quanh...' : 'Hãy nhấn "Bắt đầu tham quan"'}
-                        </Text>
-                    )
                 )}
-            </View>
+            </ScrollView>
 
-            <TouchableOpacity 
-                style={[styles.button, isScanning ? styles.buttonStop : styles.buttonStart]} 
-                onPress={isScanning ? stopScan : startScan}
-            >
-                <Text style={styles.buttonText}>{isScanning ? 'Dừng tham quan' : 'Bắt đầu tham quan'}</Text>
-            </TouchableOpacity>
-        </View>
+            {/* THANH ĐIỀU KHIỂN DƯỚI CÙNG */}
+            <View style={styles.bottomBar}>
+                <TouchableOpacity 
+                    style={[styles.button, isScanning ? styles.buttonStop : styles.buttonStart]} 
+                    onPress={isScanning ? stopScan : startScan}
+                    activeOpacity={0.8}
+                >
+                    <Text style={[styles.buttonText, isScanning ? styles.textWhite : styles.textBlack]}>
+                        {isScanning ? 'DỪNG THAM QUAN' : 'BẮT ĐẦU THAM QUAN'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, paddingTop: 60, paddingHorizontal: 20, backgroundColor: '#F5F7FA', justifyContent: 'space-between', paddingBottom: 30 },
-    headerTitle: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', color: '#2C3E50' },
-    button: { padding: 18, borderRadius: 12, alignItems: 'center' },
-    buttonStart: { backgroundColor: '#27AE60' },
-    buttonStop: { backgroundColor: '#E74C3C' },
-    buttonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-    infoContainer: { flex: 1, justifyContent: 'center' },
-    card: { padding: 20, borderRadius: 12, backgroundColor: '#FFF', elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 },
-    artifactImage: { width: '100%', height: 200, borderRadius: 8, marginBottom: 15 },
-    artifactTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 8, color: '#34495E' },
-    location: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, color: '#2980B9' },
-    description: { fontSize: 16, lineHeight: 24, color: '#2C3E50' },
-    instructionText: { textAlign: 'center', fontSize: 18, color: '#95A5A6' },
+    container: { flex: 1, backgroundColor: '#111' }, // Nền đen tuyền
+    scrollContent: { flexGrow: 1, paddingBottom: 40 },
+    
+    // Trạng thái chờ
+    emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 30, marginTop: 100 },
+    emptyTitle: { color: '#FFF', fontSize: 24, fontWeight: '800', textAlign: 'center', letterSpacing: 2, marginBottom: 15 },
+    emptySubtitle: { color: '#888', fontSize: 16, textAlign: 'center', lineHeight: 24 },
+    loadingContainer: { marginTop: 150, alignItems: 'center' },
+
+    // Phong cách ảnh tràn viền
+    heroImage: { width: '100%', height: 480 },
+    
+    // Khung nội dung
+    contentBox: { paddingHorizontal: 24, paddingVertical: 30 },
+    badge: { backgroundColor: '#FFF', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4, marginBottom: 20 },
+    badgeText: { color: '#000', fontWeight: 'bold', fontSize: 12 },
+    
+    // Typography đỉnh cao
+    title: { color: '#FFF', fontSize: 28, fontWeight: '800', letterSpacing: 2, marginBottom: 8 },
+    subtitle: { color: '#AAA', fontSize: 16, fontStyle: 'italic' },
+    
+    divider: { height: 1, backgroundColor: '#333', marginVertical: 24 },
+    
+    metaLabel: { color: '#888', fontSize: 12, fontWeight: 'bold', letterSpacing: 1, marginBottom: 6 },
+    metaValue: { color: '#FFF', fontSize: 15, fontWeight: '500' },
+    
+    sectionTitle: { color: '#FFF', fontSize: 22, fontWeight: '600', marginBottom: 16 },
+    description: { color: '#CCC', fontSize: 16, lineHeight: 28, textAlign: 'justify' },
+
+    // Thanh điều khiển dính dưới đáy
+    bottomBar: { padding: 20, backgroundColor: '#111', borderTopWidth: 1, borderColor: '#222' },
+    button: { paddingVertical: 18, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    buttonStart: { backgroundColor: '#FFF' }, // Nút trắng chữ đen cực sang
+    buttonStop: { backgroundColor: '#222', borderWidth: 1, borderColor: '#555' }, // Nút đen viền xám
+    
+    buttonText: { fontSize: 15, fontWeight: 'bold', letterSpacing: 1.5 },
+    textBlack: { color: '#000' },
+    textWhite: { color: '#FFF' }
 });

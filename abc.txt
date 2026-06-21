@@ -1,0 +1,6 @@
+minor:
+major:
+uuid:
+link mp3
+link ảnh
+tên tác phẩm

@@ -4,14 +4,10 @@
 
 void setup() {
   Serial.begin(115200);
-  
-  // Tăng delay lên 3 giây để máy tính kịp nhận cổng USB trước khi code chạy
   delay(3000); 
   Serial.println("Starting BLE...");
-
-  // Khởi tạo BLE
-  BLEDevice::init("Museum Beacon 1");
-  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P3);
+  BLEDevice::init("Museum Beacon 2");
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_N12);
 
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   BLEAdvertisementData oAdvertisementData = BLEAdvertisementData();
@@ -21,8 +17,8 @@ void setup() {
 
   // Tạo chuỗi cấu trúc iBeacon chuẩn (không dùng thư viện ngoài)
   std::string mfgData = "";
-  mfgData += (char)0xE5; // Mã Apple ID (Low)
-  mfgData += (char)0x02; // Mã Apple ID (High)
+  mfgData += (char)0xE5;
+  mfgData += (char)0x02;
   mfgData += (char)0x02; // iBeacon Type
   mfgData += (char)0x15; // Chiều dài data (21 bytes)
   
@@ -40,8 +36,8 @@ void setup() {
   mfgData += (char)0x00; 
   mfgData += (char)0x01;
   
-  // TX Power: -59 dBm (0xC5)
-  mfgData += (char)0xC5;
+  // TX Power: -59 dBm (0xB9)
+  mfgData += (char)0xB9;
 
   // Đẩy data vào gói quảng bá
   oAdvertisementData.setManufacturerData(mfgData);
@@ -49,7 +45,7 @@ void setup() {
 
   // Đẩy tên vào gói Scan Response để khỏi bị lấn chiếm 31 bytes
   BLEAdvertisementData oScanResponseData = BLEAdvertisementData();
-  oScanResponseData.setName("Museum Beacon 1");
+  oScanResponseData.setName("Museum Beacon 2");
   pAdvertising->setScanResponseData(oScanResponseData);
   
   pAdvertising->start();

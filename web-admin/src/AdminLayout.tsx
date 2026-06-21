@@ -71,7 +71,13 @@ const AdminLayout: React.FC = () => {
       </Sider>
       <Layout>
         <Header style={{ padding: '0 24px', background: colorBgContainer }} className="flex justify-end items-center shadow-sm">
-          <div className="flex items-center cursor-pointer text-gray-600 hover:text-red-500 transition-colors">
+          <div 
+            className="flex items-center cursor-pointer text-gray-600 hover:text-red-500 transition-colors"
+            onClick={() => {
+              localStorage.removeItem('userInfo'); // Xóa phiên đăng nhập
+              navigate('/login'); // Đẩy về trang đăng nhập
+            }}
+          >
             <LogoutOutlined className="mr-2" />
             <span>Đăng xuất</span>
           </div>

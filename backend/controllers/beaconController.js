@@ -2,7 +2,7 @@ const pool = require('../db');
 
 const getAllBeacons = async (req, res) => {
     try {
-        const query = 'SELECT * FROM beacons ORDER BY id DESC';
+        const query = 'SELECT * FROM beacons ORDER BY id ASC';
         const [rows] = await pool.execute(query);
         
         return res.status(200).json({ success: true, data: rows });

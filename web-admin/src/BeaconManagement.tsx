@@ -89,8 +89,6 @@ const BeaconManagement: React.FC = () => {
     return bytes.join(', ');
   };
 
-  // Hàm tạo mã C++
-  // Hàm tạo mã C++
   const generateCppCode = (uuid: string, major: number, minor: number) => {
     const majorHex = toHexBytes(major);
     const minorHex = toHexBytes(minor);
@@ -226,7 +224,10 @@ void loop() {
   };
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
+    { title: 'STT', 
+      key: 'stt', 
+      width: 60, 
+      render: (_text: unknown, _record: Beacon, index: number) => index + 1 },
     { title: 'MAC Address', dataIndex: 'mac_address', key: 'mac_address' },
     { title: 'UUID', dataIndex: 'uuid', key: 'uuid' },
     { title: 'Major', dataIndex: 'major', key: 'major', width: 100 },

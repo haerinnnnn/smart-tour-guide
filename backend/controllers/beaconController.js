@@ -8,7 +8,7 @@ const getAllBeacons = async (req, res) => {
     try {
         const query = 'SELECT * FROM beacons ORDER BY id DESC';
         const [rows] = await pool.execute(query);
-        
+
         return res.status(200).json({ success: true, data: rows });
     } catch (error) {
         console.error('❌ Lỗi tại API getAllBeacons:', error.message);
@@ -52,8 +52,8 @@ const createBeacon = async (req, res) => {
         const query = 'INSERT INTO beacons (uuid, major, minor, location_name) VALUES (?, ?, ?, ?)';
         const [result] = await pool.execute(query, [uuid, parseInt(major), parseInt(minor), location_name]);
 
-        return res.status(201).json({ 
-            success: true, 
+        return res.status(201).json({
+            success: true,
             message: 'Thêm Beacon thành công',
             data: { id: result.insertId, uuid, major, minor, location_name }
         });

@@ -101,10 +101,10 @@ const BeaconManagement: React.FC = () => {
       key: 'action',
       render: (_text: unknown, record: Beacon) => (
         <Space size="middle">
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
-            onClick={() => handleEdit(record)} 
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
           />
           <Popconfirm
             title="Bạn có chắc chắn muốn xóa?"
@@ -128,10 +128,10 @@ const BeaconManagement: React.FC = () => {
         </Button>
       </div>
 
-      <Table 
-        columns={columns} 
-        dataSource={beacons} 
-        rowKey="id" 
+      <Table
+        columns={columns}
+        dataSource={beacons}
+        rowKey="id"
         loading={loading}
         pagination={{ pageSize: 8 }}
       />

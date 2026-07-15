@@ -34,13 +34,13 @@ const AdminLayout: React.FC = () => {
       icon: <WifiOutlined />,
       label: 'Quản lý Beacon',
     },
-    
+
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: 'Thống kê (Dashboard)',
     },
-    
+
   ];
 
   // Xử lý chuyển trang khi click vào menu
@@ -50,9 +50,9 @@ const AdminLayout: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider 
-        collapsible 
-        collapsed={collapsed} 
+      <Sider
+        collapsible
+        collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
         theme="light"
       >
@@ -71,7 +71,7 @@ const AdminLayout: React.FC = () => {
       </Sider>
       <Layout>
         <Header style={{ padding: '0 24px', background: colorBgContainer }} className="flex justify-end items-center shadow-sm">
-          <div 
+          <div
             className="flex items-center cursor-pointer text-gray-600 hover:text-red-500 transition-colors"
             onClick={() => {
               localStorage.removeItem('userInfo'); // Xóa phiên đăng nhập

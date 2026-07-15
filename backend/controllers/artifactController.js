@@ -1,14 +1,14 @@
 const pool = require('../db');
 const visitCache = new Map();
-const DEBOUNCE_TIME = 60 * 1000; 
+const DEBOUNCE_TIME = 60 * 1000;
 const detectArtifact = async (req, res) => {
     try {
         const { uuid, major, minor } = req.query;
 
         if (!uuid || !major || !minor) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Thiếu thông số bắt buộc: uuid, major hoặc minor' 
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu thông số bắt buộc: uuid, major hoặc minor'
             });
         }
         const query = `
@@ -19,20 +19,21 @@ const detectArtifact = async (req, res) => {
         `;
         const [rows] = await pool.execute(query, [uuid, parseInt(major), parseInt(minor)]);
         if (rows.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Không tìm thấy hiện vật nào ở vị trí này' 
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy hiện vật nào ở vị trí này'
             });
         }
 
         const artifact = rows[0];
-        const clientIp = req.ip || req.socket.remoteAddress; 
-        const cacheKey = `${clientIp}_${artifact.id}`; 
+        const clientIp = req.ip || req.socket.remoteAddress;
+        const cacheKey = `${clientIp}_${artifact.id}`;
         const lastVisitTime = visitCache.get(cacheKey);
         const now = Date.now();
         if (!lastVisitTime || (now - lastVisitTime) > DEBOUNCE_TIME) {
             const insertLogQuery = 'INSERT INTO visit_logs (artifact_id, created_at) VALUES (?, NOW())';
             await pool.execute(insertLogQuery, [artifact.id]);
+            // Cập nhật thời điểm vừa xem vào cache
             visitCache.set(cacheKey, now);
             console.log(`📝 Ghi nhận 1 lượt xem mới cho hiện vật: ${artifact.title} (ID: ${artifact.id})`);
         }
@@ -82,9 +83,10 @@ const createArtifact = async (req, res) => {
         if (!title) {
             return res.status(400).json({ success: false, message: 'Vui lòng cung cấp tên hiện vật (title)' });
         }
+        // beacon_id có thể truyền null nếu hiện vật chưa được gắn cảm biến
         const query = 'INSERT INTO artifacts (beacon_id, title, author, description, image_url, audio_url) VALUES (?, ?, ?, ?, ?, ?)';
         const [result] = await pool.execute(query, [beacon_id || null, title, author || 'Ẩn danh', description || '', image_url || null, audio_url || null]);
-        
+
         return res.status(201).json({ success: true, message: 'Thêm hiện vật thành công', data: { id: result.insertId } });
     } catch (error) {
         console.error('❌ Lỗi tại API createArtifact:', error.message);
@@ -101,7 +103,7 @@ const updateArtifact = async (req, res) => {
         }
         const query = 'UPDATE artifacts SET beacon_id = ?, title = ?, author = ?, description = ?, image_url = ?, audio_url = ? WHERE id = ?';
         const [result] = await pool.execute(query, [beacon_id || null, title, author || 'Ẩn danh', description || '', image_url || null, audio_url || null, id]);
-        
+
         if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Không tìm thấy hiện vật để cập nhật' });
         return res.status(200).json({ success: true, message: 'Cập nhật hiện vật thành công' });
     } catch (error) {
@@ -115,7 +117,7 @@ const deleteArtifact = async (req, res) => {
         const { id } = req.params;
         const query = 'DELETE FROM artifacts WHERE id = ?';
         const [result] = await pool.execute(query, [id]);
-        
+
         if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Không tìm thấy hiện vật để xóa' });
         return res.status(200).json({ success: true, message: 'Xóa hiện vật thành công' });
     } catch (error) {
@@ -132,4 +134,29 @@ const uploadFile = (req, res) => {
     return res.status(200).json({ success: true, url: fileUrl });
 };
 
-module.exports = { detectArtifact, getAllArtifacts, getArtifactById, createArtifact, updateArtifact, deleteArtifact, uploadFile };
+/**
+ * Lấy số liệu thống kê tổng quan cho trang Dashboard
+ * Route: GET /api/artifacts/stats
+ * Output: tổng số beacon, tổng số hiện vật, tổng số lượt xem
+ */
+const getStats = async (req, res) => {
+    try {
+        const [[beaconRow]] = await pool.execute('SELECT COUNT(*) AS total FROM beacons');
+        const [[artifactRow]] = await pool.execute('SELECT COUNT(*) AS total FROM artifacts');
+        const [[visitRow]] = await pool.execute('SELECT COUNT(*) AS total FROM visit_logs');
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                totalBeacons: beaconRow.total,
+                totalArtifacts: artifactRow.total,
+                totalVisits: visitRow.total,
+            },
+        });
+    } catch (error) {
+        console.error('❌ Lỗi tại API getStats:', error.message);
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
+    }
+};
+
+module.exports = { detectArtifact, getAllArtifacts, getArtifactById, createArtifact, updateArtifact, deleteArtifact, uploadFile, getStats };

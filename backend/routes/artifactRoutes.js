@@ -1,23 +1,33 @@
+
 const express = require('express');
 const router = express.Router();
-
-// Import toàn bộ các hàm từ Controller
-const { 
-    detectArtifact, 
-    getAllArtifacts, 
-    getArtifactById, 
-    createArtifact, 
-    updateArtifact, 
-    deleteArtifact 
+const upload = require('../upload');
+const {
+    detectArtifact,
+    getAllArtifacts,
+    getArtifactById,
+    createArtifact,
+    updateArtifact,
+    deleteArtifact,
+    uploadFile,
+    getStats,
 } = require('../controllers/artifactController');
 
-// 1. API dành cho App điện thoại (Quét BLE)
+// Lưu ý: Tiền tố /api/artifacts sẽ được định nghĩa ở file index.js
+
+// API nhận diện hiện vật qua Beacon (dùng cho Mobile App)
 router.get('/detect', detectArtifact);
 
-// 2. API dành cho Web Admin (CRUD Hiện vật)
+// API thống kê tổng quan cho Dashboard (đặt trước /:id để tránh xung đột route)
+router.get('/stats', getStats);
+
+// API upload file (Hình ảnh / Âm thanh) - field name: 'file'
+router.post('/upload', upload.single('file'), uploadFile);
+
+// CRUD Hiện vật (dùng cho Web Admin)
 router.get('/', getAllArtifacts);
-router.post('/', createArtifact);
 router.get('/:id', getArtifactById);
+router.post('/', createArtifact);
 router.put('/:id', updateArtifact);
 router.delete('/:id', deleteArtifact);
 

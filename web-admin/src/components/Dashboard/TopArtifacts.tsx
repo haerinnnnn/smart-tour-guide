@@ -56,7 +56,7 @@ const TopArtifacts: React.FC = () => {
                                         <Avatar
                                             shape="square"
                                             size={48}
-                                            src={`http://localhost:3000${item.image_url}`}
+                                            src={item.image_url}
                                         />
                                     ) : (
                                         <Avatar

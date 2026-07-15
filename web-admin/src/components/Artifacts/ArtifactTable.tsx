@@ -13,14 +13,21 @@ import {
 } from "@ant-design/icons";
 
 interface Artifact {
-    id?: number;
+    id: number;
+    beacon_id: number | null;
+
     title: string;
     author: string;
     description: string;
+
     image_url: string;
     audio_url: string;
-    beacon_id: number | null;
+
     location_name?: string;
+
+    uuid?: string;
+    major?: number;
+    minor?: number;
 }
 
 interface Props {
@@ -29,6 +36,17 @@ interface Props {
     onEdit: (artifact: Artifact) => void;
     onDelete: (id: number) => void;
 }
+const getFileUrl = (url?: string) => {
+    if (!url) return "";
+
+    // Nếu là URL đầy đủ
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+        return url;
+    }
+
+    // Nếu là file upload trong backend
+    return `http://localhost:3000${url}`;
+};
 
 const ArtifactTable: React.FC<Props> = ({
     data,
@@ -55,8 +73,13 @@ const ArtifactTable: React.FC<Props> = ({
                     <Image
                         width={70}
                         height={70}
-                        style={{ objectFit: "cover", borderRadius: 6 }}
-                        src={`http://localhost:3000${url}`}
+                        preview
+                        style={{
+                            objectFit: "cover",
+                            borderRadius: 6,
+                        }}
+                        src={getFileUrl(url)}
+                        fallback="https://placehold.co/70x70?text=No+Image"
                     />
                 ) : (
                     "-"

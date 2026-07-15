@@ -1,6 +1,7 @@
+
 const express = require('express');
 const router = express.Router();
-<<<<<<< HEAD
+const pool = require('../db');
 const {
     getAllBeacons,
     getBeaconById,
@@ -11,22 +12,7 @@ const {
 
 // Tiền tố /api/beacons được định nghĩa ở index.js
 
-router.get('/', getAllBeacons);
-router.get('/:id', getBeaconById);
-router.post('/', createBeacon);
-router.put('/:id', updateBeacon);
-router.delete('/:id', deleteBeacon);
-
-module.exports = router;
-=======
-const pool = require('../db');
-const { 
-    getAllBeacons, 
-    getBeaconById, 
-    createBeacon, 
-    updateBeacon, 
-    deleteBeacon 
-} = require('../controllers/beaconController');
+// API dạng dictionary (key = mac_address) - dùng cho App di động quét Beacon qua MAC
 router.get('/dictionary', async (req, res) => {
     try {
         const query = `
@@ -36,7 +22,7 @@ router.get('/dictionary', async (req, res) => {
             LEFT JOIN artifacts a ON b.id = a.beacon_id;
         `;
         const [rows] = await pool.query(query);
-        
+
         const beaconDictionary = {};
         rows.forEach(beacon => {
             if (beacon.mac_address) {
@@ -44,7 +30,7 @@ router.get('/dictionary', async (req, res) => {
                     uuid: beacon.uuid,
                     major: beacon.major,
                     minor: beacon.minor,
-                    name: beacon.name || beacon.location_name 
+                    name: beacon.name || beacon.location_name,
                 };
             }
         });
@@ -55,11 +41,11 @@ router.get('/dictionary', async (req, res) => {
     }
 });
 
+// CRUD Beacon (dùng cho Web Admin)
 router.get('/', getAllBeacons);
-router.post('/', createBeacon);
 router.get('/:id', getBeaconById);
+router.post('/', createBeacon);
 router.put('/:id', updateBeacon);
 router.delete('/:id', deleteBeacon);
 
 module.exports = router;
->>>>>>> 3541eda8c1186093af7598913ad0a6603f1bb2c9

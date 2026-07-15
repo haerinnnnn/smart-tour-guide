@@ -1,35 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
+const {
+    getAllBeacons,
+    getBeaconById,
+    createBeacon,
+    updateBeacon,
+    deleteBeacon,
+} = require('../controllers/beaconController');
 
-// GET /api/beacons
-router.get('/', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM tbl_beacons');
+// Tiền tố /api/beacons được định nghĩa ở index.js
 
-        const beaconDictionary = {};
-
-        rows.forEach(beacon => {
-            beaconDictionary[beacon.mac_address] = {
-                uuid: beacon.uuid,
-                major: beacon.major,
-                minor: beacon.minor,
-                name: beacon.location_name
-            };
-        });
-
-        res.status(200).json({
-            success: true,
-            data: beaconDictionary
-        });
-
-    } catch (error) {
-        console.error('❌ Lỗi khi lấy dữ liệu beacons:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi hệ thống khi tải danh sách Beacon'
-        });
-    }
-});
+router.get('/', getAllBeacons);
+router.get('/:id', getBeaconById);
+router.post('/', createBeacon);
+router.put('/:id', updateBeacon);
+router.delete('/:id', deleteBeacon);
 
 module.exports = router;

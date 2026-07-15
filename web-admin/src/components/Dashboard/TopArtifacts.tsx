@@ -1,94 +1,87 @@
-import React from "react";
-import { Card, Table, Tag } from "antd";
+import React, { useEffect, useState } from "react";
+import { Card, List, Avatar, Tag, Spin, Empty } from "antd";
+import { TrophyOutlined } from "@ant-design/icons";
+
+interface TopArtifact {
+    id: number;
+    title: string;
+    image_url: string | null;
+    location_name: string | null;
+    views: number;
+}
+
+const medalColors = ["#faad14", "#bfbfbf", "#d4824a"];
 
 const TopArtifacts: React.FC = () => {
+    const [data, setData] = useState<TopArtifact[]>([]);
+    const [loading, setLoading] = useState(false);
 
-    const data = [
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(
+                "http://localhost:3000/api/dashboard/top-artifacts"
+            );
+            const result = await response.json();
+            if (result.success) {
+                setData(result.data);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        {
-            key: 1,
-            title: "Trống đồng Đông Sơn",
-            location: "Khu A",
-            views: 520,
-        },
-
-        {
-            key: 2,
-            title: "Chuông đồng",
-            location: "Khu B",
-            views: 460,
-        },
-
-        {
-            key: 3,
-            title: "Tượng Phật",
-            location: "Khu C",
-            views: 390,
-        },
-
-        {
-            key: 4,
-            title: "Bia đá",
-            location: "Khu D",
-            views: 320,
-        },
-
-        {
-            key: 5,
-            title: "Bình gốm cổ",
-            location: "Khu A",
-            views: 280,
-        },
-
-    ];
-
-    const columns = [
-
-        {
-            title: "Hiện vật",
-            dataIndex: "title",
-        },
-
-        {
-            title: "Khu vực",
-            dataIndex: "location",
-
-            render: (value: string) => (
-                <Tag color="blue">
-                    {value}
-                </Tag>
-            ),
-        },
-
-        {
-            title: "Lượt xem",
-            dataIndex: "views",
-
-            sorter: (a: any, b: any) => a.views - b.views,
-        },
-
-    ];
+    useEffect(() => {
+        loadData();
+    }, []);
 
     return (
-
-        <Card title="Top hiện vật được xem nhiều">
-
-            <Table
-
-                columns={columns}
-
-                dataSource={data}
-
-                pagination={false}
-
-                size="small"
-
-            />
-
+        <Card title="Hiện vật được xem nhiều nhất">
+            {loading ? (
+                <div style={{ textAlign: "center", padding: 40 }}>
+                    <Spin />
+                </div>
+            ) : data.length === 0 ? (
+                <Empty description="Chưa có dữ liệu" />
+            ) : (
+                <List
+                    dataSource={data}
+                    renderItem={(item, index) => (
+                        <List.Item>
+                            <List.Item.Meta
+                                avatar={
+                                    item.image_url ? (
+                                        <Avatar
+                                            shape="square"
+                                            size={48}
+                                            src={`http://localhost:3000${item.image_url}`}
+                                        />
+                                    ) : (
+                                        <Avatar
+                                            shape="square"
+                                            size={48}
+                                            icon={<TrophyOutlined />}
+                                            style={{
+                                                backgroundColor:
+                                                    medalColors[index] || "#f0f0f0",
+                                            }}
+                                        />
+                                    )
+                                }
+                                title={item.title}
+                                description={
+                                    item.location_name || "Chưa gắn Beacon"
+                                }
+                            />
+                            <Tag color="blue">{item.views} lượt xem</Tag>
+                        </List.Item>
+                    )}
+                />
+            )}
         </Card>
-
     );
-
 };
 
 export default TopArtifacts;

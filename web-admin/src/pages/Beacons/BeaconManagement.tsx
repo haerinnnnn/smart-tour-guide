@@ -28,8 +28,8 @@ import {
 
 } from "@ant-design/icons";
 
-import BeaconTable from "./components/Beacons/BeaconTable";
-import BeaconModal from "./components/Beacons/BeaconModal";
+import BeaconTable from "../../components/Beacons/BeaconTable";
+import BeaconModal from "../../components/Beacons/BeaconModal";
 
 const { Title } = Typography;
 const { Search } = Input;

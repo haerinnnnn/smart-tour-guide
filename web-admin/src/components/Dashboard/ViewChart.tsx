@@ -1,60 +1,66 @@
-import React from "react";
-import { Column } from "@ant-design/plots";
+import React, { useEffect, useState } from "react";
+import { Line } from "@ant-design/plots";
+import { Spin, Empty } from "antd";
+
+interface MonthlyView {
+    month: string;
+    total: number;
+}
 
 const ViewChart: React.FC = () => {
+    const [data, setData] = useState<MonthlyView[]>([]);
+    const [loading, setLoading] = useState(false);
 
-    const data = [
-        { month: "Jan", views: 120 },
-        { month: "Feb", views: 165 },
-        { month: "Mar", views: 210 },
-        { month: "Apr", views: 180 },
-        { month: "May", views: 250 },
-        { month: "Jun", views: 310 },
-        { month: "Jul", views: 280 },
-        { month: "Aug", views: 340 },
-        { month: "Sep", views: 295 },
-        { month: "Oct", views: 360 },
-        { month: "Nov", views: 420 },
-        { month: "Dec", views: 500 },
-    ];
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(
+                "http://localhost:3000/api/dashboard/monthly-views"
+            );
+            const result = await response.json();
+            if (result.success) {
+                setData(result.data);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    return (
+    useEffect(() => {
+        loadData();
+    }, []);
 
-        <Column
+    if (loading) {
+        return (
+            <div style={{ textAlign: "center", padding: 60 }}>
+                <Spin />
+            </div>
+        );
+    }
 
-            data={data}
+    if (data.length === 0 || data.every((d) => d.total === 0)) {
+        return <Empty description="Chưa có lượt xem nào" />;
+    }
 
-            xField="month"
+    const config = {
+        data,
+        xField: "month",
+        yField: "total",
+        height: 280,
+        smooth: true,
+        point: { size: 4, shape: "circle" },
+        color: "#1677ff",
+        xAxis: {
+            title: { text: "Tháng" },
+        },
+        yAxis: {
+            title: { text: "Lượt xem" },
+        },
+    };
 
-            yField="views"
-
-            height={320}
-
-            columnStyle={{
-                radius: [6, 6, 0, 0],
-            }}
-
-            label={{
-                text: "views",
-                position: "top",
-                style: {
-                    fill: "#666",
-                },
-            }}
-
-            axis={{
-                y: {
-                    title: "Lượt xem",
-                },
-                x: {
-                    title: "Tháng",
-                },
-            }}
-
-        />
-
-    );
-
+    return <Line {...config} />;
 };
 
 export default ViewChart;

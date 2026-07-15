@@ -627,5 +627,6 @@ const ArtifactModal: React.FC<Props> = ({
         </Modal>
 
     );
-}
-    export default ArtifactModal;
+};
+
+export default ArtifactModal;

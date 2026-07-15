@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+<<<<<<< HEAD
 const upload = require('../upload');
 const {
     detectArtifact,
@@ -27,6 +28,26 @@ router.post('/upload', upload.single('file'), uploadFile);
 router.get('/', getAllArtifacts);
 router.get('/:id', getArtifactById);
 router.post('/', createArtifact);
+=======
+
+// Import toàn bộ các hàm từ Controller
+const { 
+    detectArtifact, 
+    getAllArtifacts, 
+    getArtifactById, 
+    createArtifact, 
+    updateArtifact, 
+    deleteArtifact 
+} = require('../controllers/artifactController');
+
+// 1. API dành cho App điện thoại (Quét BLE)
+router.get('/detect', detectArtifact);
+
+// 2. API dành cho Web Admin (CRUD Hiện vật)
+router.get('/', getAllArtifacts);
+router.post('/', createArtifact);
+router.get('/:id', getArtifactById);
+>>>>>>> 3541eda8c1186093af7598913ad0a6603f1bb2c9
 router.put('/:id', updateArtifact);
 router.delete('/:id', deleteArtifact);
 

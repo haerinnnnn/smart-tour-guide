@@ -2,27 +2,25 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Import thêm công cụ này
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
 
 export default function RootLayout() {
-  // Lấy thông số viền màn hình của máy hiện tại
   const insets = useSafeAreaInsets();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Tabs screenOptions={{ 
         headerShown: false, 
-        tabBarActiveTintColor: '#27AE60',
-        tabBarInactiveTintColor: '#95A5A6',
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: '#555555',
         tabBarStyle: { 
-          // Tự động cộng thêm khoảng không gian của thanh điều hướng Android
           height: 60 + insets.bottom, 
           paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
           paddingTop: 10,
-          backgroundColor: '#FFFFFF',
-          elevation: 10, // Thêm chút bóng đổ cho đẹp
+          backgroundColor: '#111111',
+          elevation: 0,
           borderTopWidth: 1,
-          borderTopColor: '#F0F0F0'
+          borderTopColor: '#222222'
         },
         tabBarLabelStyle: {
           fontSize: 12,

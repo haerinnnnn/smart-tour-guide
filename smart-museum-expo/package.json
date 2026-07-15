@@ -7,10 +7,11 @@
     "@expo/ui": "~56.0.14",
     "@expo/vector-icons": "^15.0.2",
     "@openspacelabs/react-native-zoomable-view": "^2.4.2",
+    "@react-navigation/native": "^7.3.3",
     "buffer": "^6.0.3",
     "expo": "~56.0.5",
     "expo-build-properties": "~56.0.16",
-    "expo-constants": "~56.0.16",
+    "expo-constants": "~56.0.17",
     "expo-dev-client": "~56.0.16",
     "expo-device": "~56.0.4",
     "expo-font": "~56.0.5",
@@ -34,7 +35,8 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "0.8.3"
+    "react-native-worklets": "0.8.3",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@react-native-community/cli": "latest",

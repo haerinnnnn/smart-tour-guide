@@ -1,12 +1,8 @@
 const pool = require('../db');
 
-/**
- * Lấy danh sách tất cả các Beacon
- * Route: GET /api/beacons
- */
 const getAllBeacons = async (req, res) => {
     try {
-        const query = 'SELECT * FROM beacons ORDER BY id DESC';
+        const query = 'SELECT * FROM beacons ORDER BY id ASC';
         const [rows] = await pool.execute(query);
 
         return res.status(200).json({ success: true, data: rows });
@@ -16,10 +12,6 @@ const getAllBeacons = async (req, res) => {
     }
 };
 
-/**
- * Lấy thông tin 1 Beacon cụ thể theo ID
- * Route: GET /api/beacons/:id
- */
 const getBeaconById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -37,25 +29,19 @@ const getBeaconById = async (req, res) => {
     }
 };
 
-/**
- * Thêm mới 1 thiết bị Beacon
- * Route: POST /api/beacons
- */
 const createBeacon = async (req, res) => {
     try {
-        const { uuid, major, minor, location_name } = req.body;
-
+        const { mac_address, uuid, major, minor, location_name } = req.body;
         if (!uuid || major === undefined || minor === undefined || !location_name) {
             return res.status(400).json({ success: false, message: 'Vui lòng cung cấp đủ thông tin: uuid, major, minor, location_name' });
         }
-
-        const query = 'INSERT INTO beacons (uuid, major, minor, location_name) VALUES (?, ?, ?, ?)';
-        const [result] = await pool.execute(query, [uuid, parseInt(major), parseInt(minor), location_name]);
+        const query = 'INSERT INTO beacons (mac_address, uuid, major, minor, location_name) VALUES (?, ?, ?, ?, ?)';
+        const [result] = await pool.execute(query, [mac_address || null, uuid, parseInt(major), parseInt(minor), location_name]);
 
         return res.status(201).json({
             success: true,
             message: 'Thêm Beacon thành công',
-            data: { id: result.insertId, uuid, major, minor, location_name }
+            data: { id: result.insertId, mac_address, uuid, major, minor, location_name }
         });
     } catch (error) {
         console.error('❌ Lỗi tại API createBeacon:', error.message);
@@ -63,21 +49,16 @@ const createBeacon = async (req, res) => {
     }
 };
 
-/**
- * Cập nhật thông tin Beacon
- * Route: PUT /api/beacons/:id
- */
 const updateBeacon = async (req, res) => {
     try {
         const { id } = req.params;
-        const { uuid, major, minor, location_name } = req.body;
+        const { mac_address, uuid, major, minor, location_name } = req.body;
 
         if (!uuid || major === undefined || minor === undefined || !location_name) {
             return res.status(400).json({ success: false, message: 'Vui lòng cung cấp đủ thông tin cần cập nhật' });
         }
-
-        const query = 'UPDATE beacons SET uuid = ?, major = ?, minor = ?, location_name = ? WHERE id = ?';
-        const [result] = await pool.execute(query, [uuid, parseInt(major), parseInt(minor), location_name, id]);
+        const query = 'UPDATE beacons SET mac_address = ?, uuid = ?, major = ?, minor = ?, location_name = ? WHERE id = ?';
+        const [result] = await pool.execute(query, [mac_address || null, uuid, parseInt(major), parseInt(minor), location_name, id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ success: false, message: 'Không tìm thấy Beacon để cập nhật' });
@@ -90,10 +71,6 @@ const updateBeacon = async (req, res) => {
     }
 };
 
-/**
- * Xóa 1 Beacon
- * Route: DELETE /api/beacons/:id
- */
 const deleteBeacon = async (req, res) => {
     try {
         const { id } = req.params;
